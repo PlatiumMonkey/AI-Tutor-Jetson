@@ -1,0 +1,21 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Môi trường và cấu hình mật
+.env
+.venv/
+env/
+
+# Dữ liệu Docker và Model AI (Nặng - Không up lên Cloud)
+ollama_data/
+webui_data/
+data/raw_knowledge/
+data/vector_db/
+data/models/
+
+# Jupyter Notebook checkpoints
+*.ipynb_checkpoints/
+
+# File hệ thống
+.DS_Store
