@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # 1. Backend AI: Ollama (Chạy Llama 3)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ai_tutor_ollama
+    restart: always
+    runtime: nvidia          # BẮT BUỘC: Để dùng GPU Jetson
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      # Map thư mục data/models vào trong container để không phải tải lại model khi reset
+      - ../data/models:/root/.ollama
+    ports:
+      - "11434:11434"
+    networks:
+      - ai-network
+
+  # 2. Giao diện & RAG: Open WebUI
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: ai_tutor_webui
+    restart: always
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      # Tối ưu cho Jetson 8GB RAM
+      - ENABLE_IMAGE_GENERATION=False  # Tắt vẽ ảnh để tiết kiệm RAM
+      - WEBUI_NAME="AI Tutor Assistant" # Tên Web
+    volumes:
+      # Map database của WebUI ra ngoài để không mất lịch sử chat
+      - ../data/vector_db:/app/backend/data
+    ports:
+      - "3000:8080"
+    depends_on:
+      - ollama
+    networks:
+      - ai-network
+
+ # 3. API Logic (Python FastAPI)
+  app-backend:
+    build:
+      context: ../
+      dockerfile: deploy/Dockerfile.app
+    container_name: ai_tutor_api
+    restart: always
+    volumes:
+      - ../src:/app/src  # Map code để sửa xong chạy ngay không cần rebuild
+    ports:
+      - "8000:8000"
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - ai-network
+
+  # 4. Giao diện Người dùng (Streamlit)
+  app-frontend:
+    image: python:3.10-slim
+    container_name: ai_tutor_ui
+    restart: always
+    working_dir: /app
+    volumes:
+      - ../src:/app/src
+      - ../requirements.txt:/app/requirements.txt
+    # Cài thư viện và chạy app ngay khi khởi động
+    command: >
+      bash -c "pip install -r requirements.txt && streamlit run src/frontend.py"
+    ports:
+      - "8501:8501" # Cổng mặc định của Streamlit
+    depends_on:
+      - app-backend
+    networks:
+      - ai-network
+
+networks:
+  ai-network:
+    driver: bridge

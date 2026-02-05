@@ -1,0 +1,20 @@
+# Core Framework
+fastapi==0.109.0
+uvicorn==0.27.0
+python-dotenv==1.0.0
+
+# AI & RAG
+langchain==0.1.0
+langchain-community
+chromadb==0.4.22  # Vector Database nhẹ
+sentence-transformers # Để tạo Embedding
+pypdf  # Để đọc file PDF
+
+# Utilities
+requests
+aiohttp
+
+#frontend
+streamlit==1.31.0
+streamlit-mic-recorder # Thư viện hỗ trợ nút thu âm
+requests # Để gọi sang API của chính mình
